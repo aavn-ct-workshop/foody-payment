@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.aa.workshop.kafka.payment.entity.FoodyOrder;
+import com.aa.workshop.kafka.payment.entity.FoodyWallet;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -14,6 +15,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 @EnableKafka
@@ -48,16 +50,29 @@ public class KafkaConsumerConfig {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                new StringDeserializer(),
-                new JsonDeserializer<>(FoodyOrder.class));
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(FoodyOrder.class));
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, FoodyOrder> foodyOrderKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, FoodyOrder> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(foodyOrderConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, FoodyWallet> foodyWalletConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(FoodyWallet.class));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, FoodyWallet> foodyWalletKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, FoodyWallet> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(foodyWalletConsumerFactory());
         return factory;
     }
 }
