@@ -7,10 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FoodyWallet {
-    String uuid;
+public class BalanceResponse {
     String userId;
-    long orderTime;
-    long proceedTime;
-    boolean hasPaid;
+    Long balance;
 }
