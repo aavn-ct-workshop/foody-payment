@@ -26,7 +26,7 @@ public class PaymentManagement {
 
     @KafkaListener(topics = "orders", containerFactory = "foodyOrderKafkaListenerContainerFactory")
     public void listenOrders(FoodyOrder record) {
-        if(record.isPaid()) {
+        if(!"VALIDATING".equals(record.getStatus())) {
             return;
         }
         log.info("FoodyOrder: {}", record);
@@ -35,18 +35,16 @@ public class PaymentManagement {
 
     private void handlePaymentFoodyOrder(FoodyOrder value) {
         FoodyOrder handledOrder = value;
-        Long balance = paymentRepo.findByUserId(value.getUserId()).stream().mapToLong(Payment::getAmount).sum();
+        Long balance = paymentRepo.findByUserId(value.getHostId()).stream().mapToLong(Payment::getAmount).sum();
         Timestamp ts = Timestamp.from(Instant.now());
         
         if(balance >= value.getPrice()) {
-            updateBalance(new PaymentData(value.getUserId(), value.getPrice() * -1, "Paid for order id " + value.getUuid()));
-            handledOrder.setPaid(true);
+            updateBalance(new PaymentData(value.getHostId(), value.getPrice() * -1, "Paid for order id " + value.getId()));
             log.info("Produce message back to orders topic - {}", handledOrder);
-            ordersTemplate.send("orders", handledOrder);
-            paymentsTemplate.send("payments", new FoodyWallet(value.getUuid(), value.getUserId(), value.getTimestamp(), ts.getTime(), true));
+            paymentsTemplate.send("payments", new FoodyWallet(value.getId(), value.getHostId(), value.getCreateDate(), ts.getTime(), true));
         } else {
             log.info("Produce message back to orders topic - {}", handledOrder);
-            paymentsTemplate.send("payments", new FoodyWallet(value.getUuid(), value.getUserId(), value.getTimestamp(), ts.getTime(), false));
+            paymentsTemplate.send("payments", new FoodyWallet(value.getId(), value.getHostId(), value.getCreateDate(), ts.getTime(), false));
         }
     }
 
