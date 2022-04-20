@@ -1,0 +1,1 @@
+INSERT INTO payment (id, amount, detail, user_id) VALUES(1, 1000000000, '', 'ab893719-f74c-4ab0-b5b3-096ba5102aa5');
